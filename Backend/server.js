@@ -10,7 +10,7 @@ const db = mysql.createConnection({
     user: 'root',
     password: '',
     port    :'4306',
-    database: 'properties'
+    database: 'houses_data'
 })
 
 app.get('/', (re, res) => {
@@ -18,7 +18,11 @@ app.get('/', (re, res) => {
 })
 
 app.get('/houses', (req, res) => {
-    const sql = "SELECT * FROM wp_postmeta";
+    const sql = `
+    SELECT p.*, pd.*
+    FROM Properties p
+    LEFT JOIN PropertyDetails pd ON p.PropertyID = pd.PropertyID;
+  `;
     db.query(sql, (err, data) => {
         if(err) return res.json(err);
         return res.json(data);
