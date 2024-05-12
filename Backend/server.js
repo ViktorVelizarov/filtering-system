@@ -3,8 +3,10 @@ const mysql = require('mysql2')
 const cors = require("cors")    
 const MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
+require('dotenv').config(); // Load environment variables from .env file
 
 const app = express()
+const openai_key = process.env.OPENAI_API_KEY;
 app.use(cors())
 
 const db = mysql.createConnection({
@@ -18,7 +20,6 @@ const db = mysql.createConnection({
 async function getEmbedding(query) {
     // Define the OpenAI API url and key.
     const url = 'https://api.openai.com/v1/embeddings';
-    const openai_key = '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'; 
     
     // Call OpenAI API to get the embeddings.
     let response = await axios.post(url, {
@@ -65,10 +66,6 @@ async function findSimilarDocuments(embedding) {
     }
 }
 
-app.get('/', (re, res) => {
-    return res.json ("Backend side")
-})
-
 app.get('/vectorSearch', async (req, res) => {
     try {
         const query = req.query.query;
@@ -82,6 +79,15 @@ app.get('/vectorSearch', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+
+app.get('/', (re, res) => {
+    return res.json ("Backend side")
+})
+
+app.get('/vectorSearch',async  (req, res) => {
+
+})
 
 app.get('/houses', (req, res) => {
     const sql = `
@@ -104,7 +110,7 @@ app.post('/generateItinerary', async (req, res) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer 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`
+                'Authorization': `Bearer ${openai_key}`,
             },
             body: JSON.stringify({
                 model: "gpt-3.5-turbo",
@@ -114,7 +120,7 @@ app.post('/generateItinerary', async (req, res) => {
 
         const data = await response.json();
         console.log("OpenAI API response:", data); // Log the response from OpenAI API
-        
+         
         if (data && data.choices && data.choices.length > 0) {
             const result = data.choices[0]
             res.json({ result });
