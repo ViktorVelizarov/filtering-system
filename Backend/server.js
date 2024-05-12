@@ -1,21 +1,16 @@
-const express = require("express")    
-const mysql = require('mysql2') 
-const cors = require("cors")    
+const express = require("express");    
+const cors = require("cors");    
 const MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
 require('dotenv').config(); // Load environment variables from .env file
 
-const app = express()
+const app = express();
 const openai_key = process.env.OPENAI_API_KEY;
-app.use(cors())
+app.use(cors());
 
-const db = mysql.createConnection({
-    host: "localhost",
-    user: 'root',
-    password: '',
-    port    :'4306',
-    database: 'houses_data'
-})
+const url = 'mongodb+srv://viktorvelizarov1:klimatik@cluster0.dvrqh5s.mongodb.net/';
+const dbName = 'houses_data';
+const collectionName = 'properties';
 
 async function getEmbedding(query) {
     // Define the OpenAI API url and key.
@@ -40,14 +35,13 @@ async function getEmbedding(query) {
 }
 
 async function findSimilarDocuments(embedding) {
-    const url = 'mongodb+srv://viktorvelizarov1:klimatik@cluster0.dvrqh5s.mongodb.net/'; // Replace with your MongoDB url.
     const client = new MongoClient(url);
     
     try {
         await client.connect();  
         
-        const db = client.db('houses_data'); // Replace with your database name.
-        const collection = db.collection('properties'); // Replace with your collection name.
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
         
         // Query for similar documents.
         const documents = await collection.aggregate([
@@ -80,26 +74,26 @@ app.get('/vectorSearch', async (req, res) => {
     }
 });
 
+app.get('/', (req, res) => {
+    return res.json("Backend side");
+});
 
-app.get('/', (re, res) => {
-    return res.json ("Backend side")
-})
-
-app.get('/vectorSearch',async  (req, res) => {
-
-})
-
-app.get('/houses', (req, res) => {
-    const sql = `
-    SELECT p.*, pd.*
-    FROM Properties p
-    LEFT JOIN PropertyDetails pd ON p.PropertyID = pd.PropertyID;
-  `;
-    db.query(sql, (err, data) => {
-        if(err) return res.json(err);
-        return res.json(data);
-    })
-})
+app.get('/houses', async (req, res) => {
+    try {
+        const client = new MongoClient(url);
+        await client.connect();
+        
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
+        
+        const housesData = await collection.find({}).toArray();
+        
+        res.json(housesData);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
 app.post('/generateItinerary', async (req, res) => {
     try {
@@ -132,9 +126,8 @@ app.post('/generateItinerary', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-  
 
-
-app.listen(3000, () => {
-    console.log("listening")
-})
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});

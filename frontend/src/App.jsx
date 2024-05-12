@@ -37,6 +37,7 @@ function App() {
   const [fromRooms, setFromRooms] = useState('');
   const [toRooms, setToRooms] = useState('');
   const [showPopup, setShowPopup] = useState(false);
+  const [inputFieldValue, setInputFieldValue] = useState('');
 
   useEffect(() => {
     fetch("http://localhost:3000/houses")
@@ -44,9 +45,21 @@ function App() {
       .then((data) => setHouses(data));
   }, []);
 
-   // Toggle popup visibility
-   const togglePopup = () => {
+  // Toggle popup visibility
+  const togglePopup = () => {
     setShowPopup(!showPopup);
+  };
+
+  // Handle submit of the popup form
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`http://localhost:3000/vectorSearch?query=${inputFieldValue}`);
+      const data = await response.json();
+      setHouses(data);
+    } catch (error) {
+      console.error('Error:', error);
+    }
   };
 
   // Filter houses based on search query, price range, plot area range, surface area range, and rooms range
@@ -61,17 +74,23 @@ function App() {
 
   return (
     <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-4 mt-8 ml-8 relative">
-       {/* Button to toggle popup */}
-       <button onClick={togglePopup} className="fixed bottom-8 right-8 bg-blue-500 text-white py-2 px-4 rounded-full flex items-center justify-center z-10">
-       <CiChat1 />
+      {/* Button to toggle popup */}
+      <button onClick={togglePopup} className="fixed bottom-8 right-8 bg-blue-500 text-white py-2 px-4 rounded-full flex items-center justify-center z-10">
+        <CiChat1 />
       </button>
 
       {/* Popup */}
       {showPopup && (
         <div className="fixed bottom-20 right-8 bg-white p-4 rounded-md shadow-md z-20">
-          <form>
-            <label htmlFor="propertyInfo"></label>
-            <input type="text" id="propertyInfo" name="propertyInfo" />
+          <form onSubmit={handleSubmit}>
+            <label htmlFor="propertyInfo">Enter Query:  </label>
+            <input 
+              type="text" 
+              id="propertyInfo" 
+              name="propertyInfo" 
+              value={inputFieldValue}
+              onChange={(e) => setInputFieldValue(e.target.value)}
+            />
             <button type="submit">Submit</button>
           </form>
         </div>
@@ -117,8 +136,7 @@ function App() {
             type="number" 
             placeholder="" 
             value={toPlotArea}
-            onChange={(e) => setToPlotArea(e.target.value
-            )}
+            onChange={(e) => setToPlotArea(e.target.value)}
             className="px-2 py-1 border border-gray-400 w-1/3"
           />
         </div>
