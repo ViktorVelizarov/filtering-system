@@ -40,7 +40,7 @@ async function findSimilarDocuments(embedding) {
     "queryVector": embedding,
     "path": "plot_embedding",
     "numCandidates": 100,
-    "limit": 2,
+    "limit": 1,
     "index": "propertiesPlotIndex",
       }}
 ]).toArray();
@@ -52,7 +52,7 @@ async function findSimilarDocuments(embedding) {
 }
 
 async function main() {
-    const query = 'townhouse in Eindhoven'; // Replace with your query.
+    const query = ''; // Replace with your query.
     
     try {
         const embedding = await getEmbedding(query);

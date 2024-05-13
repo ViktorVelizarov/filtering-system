@@ -18,6 +18,8 @@ function PropertyCard({ property }) {
             <p className="flex flex-row items-center mr-3"><FaChartArea className="mr-2"/> {property.PlotSurfaceArea} m</p>
             <p className="flex flex-row items-center"><FaDoorOpen className="mr-2"/>{property.Rooms}</p>
           </div>
+          <p className="flex flex-row items-center ml-2">{property.GeneralInfo}</p>
+          <p className="flex flex-row items-center ml-2">{property.ConstructionType}</p>
         </div>
       </div>
     </div>
@@ -81,17 +83,19 @@ function App() {
 
       {/* Popup */}
       {showPopup && (
-        <div className="fixed bottom-20 right-8 bg-white p-4 rounded-md shadow-md z-20">
+        <div className="fixed bottom-20 right-8 bg-white p-4 rounded-md shadow-md z-20 h-48">
           <form onSubmit={handleSubmit}>
-            <label htmlFor="propertyInfo">Enter Query:  </label>
-            <input 
+            <label htmlFor="propertyInfo"> </label>
+            <div className="flex flex-col">
+            <input  className="h-28 border-black"
               type="text" 
-              id="propertyInfo" 
+              id="propertyInfo"  
               name="propertyInfo" 
               value={inputFieldValue}
               onChange={(e) => setInputFieldValue(e.target.value)}
             />
-            <button type="submit">Submit</button>
+            <button className=" mt-3 bg-green-500 rounded-lg" type="submit">Submit</button>
+            </div>
           </form>
         </div>
       )}

@@ -5,7 +5,8 @@ const axios = require('axios');
 require('dotenv').config(); // Load environment variables from .env file
 
 const app = express();
-const openai_key = process.env.OPENAI_API_KEY;
+//const openai_key = process.env.OPENAI_API_KEY;
+const openai_key ='sk-proj-RSae2CYK4S8mBSl44iiGT3BlbkFJrqoiV5zwY19B2YZ2ukPK'
 app.use(cors());
 
 const url = 'mongodb+srv://viktorvelizarov1:klimatik@cluster0.dvrqh5s.mongodb.net/';
@@ -49,7 +50,7 @@ async function findSimilarDocuments(embedding) {
                 "queryVector": embedding,
                 "path": "plot_embedding",
                 "numCandidates": 100,
-                "limit": 2,
+                "limit": 10,
                 "index": "propertiesPlotIndex",
             }}
         ]).toArray();
