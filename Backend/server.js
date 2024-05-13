@@ -1,79 +1,39 @@
-const express = require("express");    
-const cors = require("cors");    
+const express = require("express");
+const cors = require("cors");
 const MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
 require('dotenv').config(); // Load environment variables from .env file
 
 const app = express();
-//const openai_key = process.env.OPENAI_API_KEY;
-const openai_key ='sk-proj-RSae2CYK4S8mBSl44iiGT3BlbkFJrqoiV5zwY19B2YZ2ukPK'
 app.use(cors());
 
 const url = 'mongodb+srv://viktorvelizarov1:klimatik@cluster0.dvrqh5s.mongodb.net/';
 const dbName = 'houses_data';
 const collectionName = 'properties';
 
-async function getEmbedding(query) {
-    // Define the OpenAI API url and key.
-    const url = 'https://api.openai.com/v1/embeddings';
-    
-    // Call OpenAI API to get the embeddings.
-    let response = await axios.post(url, {
-        input: query,
-        model: "text-embedding-ada-002"
-    }, {
-        headers: {
-            'Authorization': `Bearer ${openai_key}`,
-            'Content-Type': 'application/json'
-        }
-    });
-    
-    if(response.status === 200) {
-        return response.data.data[0].embedding;
-    } else {
-        throw new Error(`Failed to get embedding. Status code: ${response.status}`);
+// Initialize OpenAI
+const { OpenAI } = require('openai');
+const openai = new OpenAI({ apiKey: ''});
+let currentThreadId = null; // Variable to store the current thread ID
+let assistant = null; // Variable to store the assistant
+
+// Function to create the assistant
+async function createAssistant() {
+    try {
+        assistant = await openai.beta.assistants.create({
+            name: "Math Tutor",
+            instructions: "You are a personal math tutor. Write and run code to answer math questions.",
+            tools: [{ type: "code_interpreter" }],
+            model: "gpt-4-turbo"
+        });
+    } catch (err) {
+        console.error("Error creating assistant:", err);
+        throw err;
     }
 }
 
-async function findSimilarDocuments(embedding) {
-    const client = new MongoClient(url);
-    
-    try {
-        await client.connect();  
-        
-        const db = client.db(dbName);
-        const collection = db.collection(collectionName);
-        
-        // Query for similar documents.
-        const documents = await collection.aggregate([
-            {"$vectorSearch": {
-                "queryVector": embedding,
-                "path": "plot_embedding",
-                "numCandidates": 100,
-                "limit": 10,
-                "index": "propertiesPlotIndex",
-            }}
-        ]).toArray();
-        
-        return documents;
-    } finally {
-        await client.close();
-    }
-}
-
-app.get('/vectorSearch', async (req, res) => {
-    try {
-        const query = req.query.query;
-        
-        const embedding = await getEmbedding(query);
-        const documents = await findSimilarDocuments(embedding);
-        
-        res.json(documents);
-    } catch(err) {
-        console.error(err);
-        res.status(500).json({ error: err.message });
-    }
-});
+// Create the assistant when the server starts
+createAssistant();
 
 app.get('/', (req, res) => {
     return res.json("Backend side");
@@ -83,12 +43,12 @@ app.get('/houses', async (req, res) => {
     try {
         const client = new MongoClient(url);
         await client.connect();
-        
+
         const db = client.db(dbName);
         const collection = db.collection(collectionName);
-        
+
         const housesData = await collection.find({}).toArray();
-        
+        console.log(currentThreadId )
         res.json(housesData);
     } catch (err) {
         console.error(err);
@@ -96,35 +56,87 @@ app.get('/houses', async (req, res) => {
     }
 });
 
-app.post('/generateItinerary', async (req, res) => {
+// API endpoint to create a thread and return messages
+app.get('/createThread', async (req, res) => {
     try {
-        const housesResponse = await fetch('http://localhost:3000/houses');
-        const housesData = await housesResponse.json();
-        
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${openai_key}`,
-            },
-            body: JSON.stringify({
-                model: "gpt-3.5-turbo",
-                messages: [{ role: "system", content: `Return me only the properties from this data that fit this description "the property's price is 890000 or more": ${JSON.stringify(housesData)}` }],
-            })
-        });
-
-        const data = await response.json();
-        console.log("OpenAI API response:", data); // Log the response from OpenAI API
-         
-        if (data && data.choices && data.choices.length > 0) {
-            const result = data.choices[0]
-            res.json({ result });
-        } else {
-            throw new Error("Empty or invalid response from OpenAI API");
+        if (!assistant) {
+            await createAssistant(); // Create the assistant if not already created
         }
-    } catch (error) {
-        console.error('Error:', error.message);
-        res.status(500).json({ error: error.message });
+        // Create a new thread
+        const thread = await openai.beta.threads.create();
+        currentThreadId = thread.id; // Update the current thread ID
+        
+        // Send a message to the thread
+        const message = await openai.beta.threads.messages.create(
+            thread.id,
+            {
+                role: "user",
+                content: "I need to solve the equation `3x + 11 = 14`. Can you help me?"
+            }
+        );
+
+        // Run the assistant in the thread
+        let run = await openai.beta.threads.runs.createAndPoll(
+            thread.id,
+            {
+                assistant_id: assistant.id,
+            }
+        );
+
+        // Check if the run is completed
+        if (run.status === 'completed') {
+            // Retrieve messages in the thread
+            const messages = await openai.beta.threads.messages.list(thread.id);
+            const messageContents = messages.data.map(message => `${message.role} > ${message.content[0].text.value}`);
+            res.json({ messages: messageContents });
+        } else {
+            res.status(500).json({ error: "Assistant run failed" });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// API endpoint to add a message to the current thread and return messages
+app.post('/addMessage', async (req, res) => {
+    try {
+        if (!currentThreadId) {
+            return res.status(400).json({ error: "No thread created yet" });
+        }
+
+        // Extract the message content from the URL query parameters
+        const { content } = req.query;
+
+        // Add the message to the current thread
+        const message = await openai.beta.threads.messages.create(
+            currentThreadId,
+            {
+                role: "user",
+                content: content
+            }
+        );
+
+        // Run the assistant in the thread
+        let run = await openai.beta.threads.runs.createAndPoll(
+            currentThreadId,
+            {
+                assistant_id: assistant.id,
+            }
+        );
+
+        // Check if the run is completed
+        if (run.status === 'completed') {
+            // Retrieve messages in the thread
+            const messages = await openai.beta.threads.messages.list(currentThreadId);
+            const messageContents = messages.data.map(message => `${message.role} > ${message.content[0].text.value}`);
+            res.json({ messages: messageContents });
+        } else {
+            res.status(500).json({ error: "Assistant run failed" });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
     }
 });
 
