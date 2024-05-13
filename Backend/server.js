@@ -3,6 +3,7 @@ const cors = require("cors");
 const MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
 require('dotenv').config(); // Load environment variables from .env file
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
@@ -13,27 +14,10 @@ const collectionName = 'properties';
 
 // Initialize OpenAI
 const { OpenAI } = require('openai');
-const openai = new OpenAI({ apiKey: ''});
+const openai = new OpenAI({ apiKey: 'sk-proj-VJsnjhFYhZq3siwADmmkT3BlbkFJaNPsQvx1xXPUvtk0oyNB'});
 let currentThreadId = null; // Variable to store the current thread ID
-let assistant = null; // Variable to store the assistant
+let assistantid = "asst_fREOmpcaYPqIx6MKmF15Chlo"; // Existing assistant ID
 
-// Function to create the assistant
-async function createAssistant() {
-    try {
-        assistant = await openai.beta.assistants.create({
-            name: "Math Tutor",
-            instructions: "You are a personal math tutor. Write and run code to answer math questions.",
-            tools: [{ type: "code_interpreter" }],
-            model: "gpt-4-turbo"
-        });
-    } catch (err) {
-        console.error("Error creating assistant:", err);
-        throw err;
-    }
-}
-
-// Create the assistant when the server starts
-createAssistant();
 
 app.get('/', (req, res) => {
     return res.json("Backend side");
@@ -59,9 +43,6 @@ app.get('/houses', async (req, res) => {
 // API endpoint to create a thread and return messages
 app.get('/createThread', async (req, res) => {
     try {
-        if (!assistant) {
-            await createAssistant(); // Create the assistant if not already created
-        }
         // Create a new thread
         const thread = await openai.beta.threads.create();
         currentThreadId = thread.id; // Update the current thread ID
@@ -71,7 +52,7 @@ app.get('/createThread', async (req, res) => {
             thread.id,
             {
                 role: "user",
-                content: "I need to solve the equation `3x + 11 = 14`. Can you help me?"
+                content: "I am looking for a property in Utrecht with exactly 4 rooms."
             }
         );
 
@@ -79,7 +60,7 @@ app.get('/createThread', async (req, res) => {
         let run = await openai.beta.threads.runs.createAndPoll(
             thread.id,
             {
-                assistant_id: assistant.id,
+                assistant_id: assistantid,
             }
         );
 
@@ -121,7 +102,7 @@ app.post('/addMessage', async (req, res) => {
         let run = await openai.beta.threads.runs.createAndPoll(
             currentThreadId,
             {
-                assistant_id: assistant.id,
+                assistant_id: assistantid,
             }
         );
 
