@@ -104,7 +104,7 @@ const handleSubmit = async (e) => {
 {showPopup && (
   <div className="fixed bottom-20 right-8 bg-white p-4 rounded-md shadow-md z-20 w-96">
     {/* Display messages */}
-    <div>
+    <div className="max-h-80 overflow-y-auto">
       {messages.map((message, index) => (
         <div key={index} className={`message ${message.startsWith('user') ? 'bg-blue-500 text-white rounded-br-3xl rounded-tl-3xl ml-auto' : 'bg-gray-300 text-black rounded-bl-3xl rounded-tr-3xl mr-auto'}`}>
           <p className="p-2">{message}</p>

@@ -41,20 +41,20 @@ app.get('/houses', async (req, res) => {
 });
 
 // API endpoint to create a thread and return messages
-app.get('', async (req, res) => {
+app.get('/createThread', async (req, res) => {
     try {
         // Create a new thread
         const thread = await openai.beta.threads.create();
         currentThreadId = thread.id; // Update the current thread ID
         
-        // Send a message to the thread
-        const message = await openai.beta.threads.messages.create(
-            thread.id,
-            {
-                role: "user",
-                content: "I am looking for a property in Utrecht with exactly 4 rooms."
-            }
-        );
+        // // Send a message to the thread
+        // const message = await openai.beta.threads.messages.create(
+        //     thread.id,
+        //     {
+        //         role: "user",
+        //         content: "I am looking for a property in Utrecht with exactly 4 rooms."
+        //     }
+        // );
 
         // Run the assistant in the thread
         let run = await openai.beta.threads.runs.createAndPoll(
