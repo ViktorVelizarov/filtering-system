@@ -26,7 +26,6 @@ function PropertyCard({ property }) {
   );
 }
 
-
 function App() {
   const [houses, setHouses] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,7 +39,11 @@ function App() {
   const [toRooms, setToRooms] = useState('');
   const [showPopup, setShowPopup] = useState(false);
   const [inputFieldValue, setInputFieldValue] = useState('');
-
+  const [messages, setMessages] = useState([]);
+  const [threadCreated, setThreadCreated] = useState(false);
+  console.log("messages")
+  console.log(messages)
+  
   useEffect(() => {
     fetch("http://localhost:3000/houses")
       .then((res) => res.json())
@@ -48,21 +51,37 @@ function App() {
   }, []);
 
   // Toggle popup visibility
-  const togglePopup = () => {
+  const togglePopup = async () => {
     setShowPopup(!showPopup);
-  };
-
-  // Handle submit of the popup form
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch(`http://localhost:3000/vectorSearch?query=${inputFieldValue}`);
-      const data = await response.json();
-      setHouses(data);
-    } catch (error) {
-      console.error('Error:', error);
+    if (!threadCreated) {
+      try {
+        const response = await fetch('http://localhost:3000/createThread');
+        const data = await response.json();
+        setMessages(data.messages);
+        setThreadCreated(true);
+      } catch (error) {
+        console.error('Error:', error);
+      }
     }
   };
+
+ // Handle submit of the popup form
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    // Make a fetch request to the /addMessage endpoint with input field value as URL parameter
+    const response = await fetch(`http://localhost:3000/addMessage?content=${encodeURIComponent(inputFieldValue)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    const data = await response.json();
+    setMessages(data.messages);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
 
   // Filter houses based on search query, price range, plot area range, surface area range, and rooms range
   const filteredHouses = houses.filter(house => {
@@ -81,27 +100,34 @@ function App() {
         <CiChat1 />
       </button>
 
-      {/* Popup */}
-      {showPopup && (
-        <div className="fixed bottom-20 right-8 bg-white p-4 rounded-md shadow-md z-20 h-48">
-          <form onSubmit={handleSubmit}>
-            <label htmlFor="propertyInfo"> </label>
-            <div className="flex flex-col">
-            <input  className="h-28 border-black"
-              type="text" 
-              id="propertyInfo"  
-              name="propertyInfo" 
-              value={inputFieldValue}
-              onChange={(e) => setInputFieldValue(e.target.value)}
-            />
-            <button className=" mt-3 bg-green-500 rounded-lg" type="submit">Submit</button>
-            </div>
-          </form>
+  {/* Popup */}
+{showPopup && (
+  <div className="fixed bottom-20 right-8 bg-white p-4 rounded-md shadow-md z-20 w-96">
+    {/* Display messages */}
+    <div>
+      {messages.map((message, index) => (
+        <div key={index} className={`message ${message.startsWith('user') ? 'bg-blue-500 text-white rounded-br-3xl rounded-tl-3xl ml-auto' : 'bg-gray-300 text-black rounded-bl-3xl rounded-tr-3xl mr-auto'}`}>
+          <p className="p-2">{message}</p>
         </div>
-      )}
+      ))}
+    </div>
+    <form onSubmit={handleSubmit}>
+      <label htmlFor="propertyInfo"> </label>
+      <div className="flex flex-col">
+        <input className=" border-black"
+          type="text"
+          id="propertyInfo"
+          name="propertyInfo"
+          value={inputFieldValue}
+          onChange={(e) => setInputFieldValue(e.target.value)}
+        />
+        <button className=" mt-3 bg-green-500 rounded-lg" type="submit">Submit</button>
+      </div>
+    </form>
+  </div>
+)}
 
-      {/* Logo */}
-      <img src="https://s3-alpha-sig.figma.com/img/007f/79fe/c01197223699abbb0d1d5590814b974f?Expires=1714348800&Key-Pair-Id=APKAQ4GOSFWCVNEHN3O4&Signature=BlXiTXE0prJUrwGCBgY7K7VYGSh1-KY4YvIHyoCxpjegTUiBbEhh0NFcOGSJ2qOyNKiuo-cWuKAp4QXezDAD-pf2MViQDm3jCUoDrgZVzG2K3IlInVm1EfGydHlEpgHBZZ5Q7ggSCxak16RD2fghNJBuLSOi-GJl11fcYyRiftpimeVxKyyDivhLzdenv2zkGE5b4ztw7c4miNVeMlulYcvpSXNZbhNBJfs9GnPZeFJ6gTrkskcKa4aJaHf-s-nZKhT4J23WG3i1fkdW4S9usTg8-TbP~ule0rdNXAicrxOXSiU1LQ8MUgTUvzEwJKWYVGjGEDCO2jwdmYPlxjgfmA__" alt="Logo" className="absolute top-0 left-0 mt-4 ml-4" style={{ width: '100px', height: '100px' }} />
+
 
       {/* Filters section */}
       <div className="md:col-span-1">

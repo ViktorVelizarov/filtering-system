@@ -14,7 +14,7 @@ const collectionName = 'properties';
 
 // Initialize OpenAI
 const { OpenAI } = require('openai');
-const openai = new OpenAI({ apiKey: 'sk-proj-VJsnjhFYhZq3siwADmmkT3BlbkFJaNPsQvx1xXPUvtk0oyNB'});
+const openai = new OpenAI({ apiKey: ''});
 let currentThreadId = null; // Variable to store the current thread ID
 let assistantid = "asst_fREOmpcaYPqIx6MKmF15Chlo"; // Existing assistant ID
 
@@ -41,7 +41,7 @@ app.get('/houses', async (req, res) => {
 });
 
 // API endpoint to create a thread and return messages
-app.get('/createThread', async (req, res) => {
+app.get('', async (req, res) => {
     try {
         // Create a new thread
         const thread = await openai.beta.threads.create();
