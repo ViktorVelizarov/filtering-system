@@ -41,8 +41,7 @@ function App() {
   const [inputFieldValue, setInputFieldValue] = useState('');
   const [messages, setMessages] = useState([]);
   const [threadCreated, setThreadCreated] = useState(false);
-  console.log("messages")
-  console.log(messages)
+ 
   
   useEffect(() => {
     fetch("http://localhost:3000/houses")
@@ -57,6 +56,8 @@ function App() {
       try {
         const response = await fetch('http://localhost:3000/createThread');
         const data = await response.json();
+        console.log("data")
+        console.log(data)
         setMessages(data.messages);
         setThreadCreated(true);
       } catch (error) {
@@ -103,14 +104,15 @@ const handleSubmit = async (e) => {
   {/* Popup */}
 {showPopup && (
   <div className="fixed bottom-20 right-8 bg-white p-4 rounded-md shadow-md z-20 w-96">
-    {/* Display messages */}
+        {/* Display messages */}
     <div className="max-h-80 overflow-y-auto">
-      {messages.map((message, index) => (
-        <div key={index} className={`message ${message.startsWith('user') ? 'bg-blue-500 text-white rounded-br-3xl rounded-tl-3xl ml-auto' : 'bg-gray-300 text-black rounded-bl-3xl rounded-tr-3xl mr-auto'}`}>
+      {messages.slice(0).reverse().map((message, index) => (
+        <div key={index} className={`message ${message.startsWith('user') ? 'bg-blue-500 text-white rounded-br-3xl rounded-tl-3xl ml-auto m-2' : 'bg-gray-300 text-black rounded-bl-3xl rounded-tr-3xl mr-auto'}`}>
           <p className="p-2">{message}</p>
         </div>
       ))}
     </div>
+
     <form onSubmit={handleSubmit}>
       <label htmlFor="propertyInfo"> </label>
       <div className="flex flex-col">
