@@ -6,7 +6,7 @@ require('dotenv').config(); // Load environment variables from .env file
 
 const app = express();
 //const openai_key = process.env.OPENAI_API_KEY;
-const openai_key ='sk-proj-RSae2CYK4S8mBSl44iiGT3BlbkFJrqoiV5zwY19B2YZ2ukPK'
+const openai_key =''
 app.use(cors());
 
 const url = 'mongodb+srv://viktorvelizarov1:klimatik@cluster0.dvrqh5s.mongodb.net/';
@@ -14,9 +14,7 @@ const dbName = 'houses_data';
 const collectionName = 'properties';
 
 async function getEmbedding(query) {
-    // Define the OpenAI API url and key.
     const url = 'https://api.openai.com/v1/embeddings';
-    
     // Call OpenAI API to get the embeddings.
     let response = await axios.post(url, {
         input: query,
@@ -27,7 +25,6 @@ async function getEmbedding(query) {
             'Content-Type': 'application/json'
         }
     });
-    
     if(response.status === 200) {
         return response.data.data[0].embedding;
     } else {
@@ -37,24 +34,20 @@ async function getEmbedding(query) {
 
 async function findSimilarDocuments(embedding) {
     const client = new MongoClient(url);
-    
     try {
         await client.connect();  
-        
         const db = client.db(dbName);
         const collection = db.collection(collectionName);
-        
         // Query for similar documents.
         const documents = await collection.aggregate([
             {"$vectorSearch": {
                 "queryVector": embedding,
                 "path": "plot_embedding",
                 "numCandidates": 100,
-                "limit": 10,
+                "limit": 1,
                 "index": "propertiesPlotIndex",
             }}
         ]).toArray();
-        
         return documents;
     } finally {
         await client.close();
@@ -64,10 +57,8 @@ async function findSimilarDocuments(embedding) {
 app.get('/vectorSearch', async (req, res) => {
     try {
         const query = req.query.query;
-        
         const embedding = await getEmbedding(query);
         const documents = await findSimilarDocuments(embedding);
-        
         res.json(documents);
     } catch(err) {
         console.error(err);

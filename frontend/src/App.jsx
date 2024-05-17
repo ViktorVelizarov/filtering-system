@@ -56,6 +56,7 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      console.log("test")
       const response = await fetch(`http://localhost:3000/vectorSearch?query=${inputFieldValue}`);
       const data = await response.json();
       setHouses(data);

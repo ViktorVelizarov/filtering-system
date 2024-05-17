@@ -4,7 +4,7 @@ const MongoClient = require('mongodb').MongoClient;
 async function getEmbedding(query) {
     // Define the OpenAI API url and key.
     const url = 'https://api.openai.com/v1/embeddings';
-    const openai_key = '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'; 
+    const openai_key = ''; 
     
     // Call OpenAI API to get the embeddings.
     let response = await axios.post(url, {
