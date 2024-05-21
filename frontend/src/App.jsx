@@ -41,12 +41,25 @@ function App() {
   const [inputFieldValue, setInputFieldValue] = useState('');
   const [messages, setMessages] = useState([]);
   const [threadCreated, setThreadCreated] = useState(false);
- 
+  const [streamedMessage, setStreamedMessage] = useState('');
+  const [loading, setLoading] = useState(false);
   
   useEffect(() => {
     fetch("http://localhost:3000/houses")
       .then((res) => res.json())
       .then((data) => setHouses(data));
+  }, []);
+
+  useEffect(() => {
+    const eventSource = new EventSource("http://localhost:3000/events");
+    eventSource.onmessage = (event) => {
+      const newMessage = JSON.parse(event.data);
+      // Append the new message to the existing streamedMessage
+      setStreamedMessage((prevMessage) => prevMessage + newMessage.content);
+    };
+    return () => {  
+      eventSource.close();
+    };
   }, []);
 
   // Toggle popup visibility
@@ -56,8 +69,6 @@ function App() {
       try {
         const response = await fetch('http://localhost:3000/createThread');
         const data = await response.json();
-        console.log("data")
-        console.log(data)
         setMessages(data.messages);
         setThreadCreated(true);
       } catch (error) {
@@ -66,23 +77,26 @@ function App() {
     }
   };
 
- // Handle submit of the popup form
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    // Make a fetch request to the /addMessage endpoint with input field value as URL parameter
-    const response = await fetch(`http://localhost:3000/addMessage?content=${encodeURIComponent(inputFieldValue)}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-    const data = await response.json();
-    setMessages(data.messages);
-  } catch (error) {
-    console.error('Error:', error);
-  }
-};
+  // Handle submit of the popup form
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      // Make a fetch request to the /addMessage endpoint with input field value as URL parameter
+      const response = await fetch(`http://localhost:3000/addMessage?content=${encodeURIComponent(inputFieldValue)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      setMessages(data.messages);
+      setStreamedMessage(''); // Clear the streamed message
+    } catch (error) {
+      console.error('Error:', error);
+    }
+    setLoading(false);
+  };
 
   // Filter houses based on search query, price range, plot area range, surface area range, and rooms range
   const filteredHouses = houses.filter(house => {
@@ -101,35 +115,38 @@ const handleSubmit = async (e) => {
         <CiChat1 />
       </button>
 
-  {/* Popup */}
-{showPopup && (
-  <div className="fixed bottom-20 right-8 bg-white p-4 rounded-md shadow-md z-20 w-96">
-        {/* Display messages */}
-    <div className="max-h-80 overflow-y-auto">
-      {messages.slice(0).reverse().map((message, index) => (
-        <div key={index} className={`message ${message.startsWith('user') ? 'bg-blue-500 text-white rounded-br-3xl rounded-tl-3xl ml-auto m-2' : 'bg-gray-300 text-black rounded-bl-3xl rounded-tr-3xl mr-auto'}`}>
-          <p className="p-2">{message}</p>
+      {/* Popup */}
+      {showPopup && (
+        <div className="fixed bottom-20 right-8 bg-white p-4 rounded-md shadow-md z-20 w-96">
+          {/* Display messages */}
+          <div className="max-h-80 overflow-y-auto">
+            {messages.slice(0).reverse().map((message, index) => (
+              <div key={index} className={`message ${message.startsWith('user') ? 'bg-blue-500 text-white rounded-br-3xl rounded-tl-3xl ml-auto m-2' : 'bg-gray-300 text-black rounded-bl-3xl rounded-tr-3xl mr-auto'}`}>
+                <p className="p-2">{message}</p>
+              </div>
+            ))}
+            {loading && (
+              <div className="message bg-gray-300 text-black rounded-bl-3xl rounded-tr-3xl mr-auto">
+                <p className="p-2">{streamedMessage}</p>
+              </div>
+            )}
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <label htmlFor="propertyInfo"> </label>
+            <div className="flex flex-col">
+              <input className="border-black"
+                type="text"
+                id="propertyInfo"
+                name="propertyInfo"
+                value={inputFieldValue}
+                onChange={(e) => setInputFieldValue(e.target.value)}
+              />
+              <button className="mt-3 bg-green-500 rounded-lg" type="submit">Submit</button>
+            </div>
+          </form>
         </div>
-      ))}
-    </div>
-
-    <form onSubmit={handleSubmit}>
-      <label htmlFor="propertyInfo"> </label>
-      <div className="flex flex-col">
-        <input className=" border-black"
-          type="text"
-          id="propertyInfo"
-          name="propertyInfo"
-          value={inputFieldValue}
-          onChange={(e) => setInputFieldValue(e.target.value)}
-        />
-        <button className=" mt-3 bg-green-500 rounded-lg" type="submit">Submit</button>
-      </div>
-    </form>
-  </div>
-)}
-
-
+      )}
 
       {/* Filters section */}
       <div className="md:col-span-1">
@@ -194,7 +211,7 @@ const handleSubmit = async (e) => {
         {/* Rooms filters */}
         <p className="font-medium"> Rooms</p>
         <div className="my-4 flex flex-row items-center">
-          <input 
+        <input 
             type="number" 
             placeholder="" 
             value={fromRooms}
@@ -209,6 +226,7 @@ const handleSubmit = async (e) => {
             onChange={(e) => setToRooms(e.target.value)}
             className="px-2 py-1 border border-gray-400 w-1/3"
           />
+
         </div>
       </div>
 
