@@ -16,11 +16,19 @@ const collectionName = 'properties';
 
 // Initialize OpenAI
 const { OpenAI } = require('openai');
-const openai = new OpenAI({ apiKey: 'sk-proj-yxjaaalaaP1PrXekZJMuT3BlbkFJ0EEmPoVSL8IQ5ILbbdFF'});
+const openai = new OpenAI({ apiKey: 'sk-proj-48y1Honv04W8ltS6GFkUT3BlbkFJoTmWAxC2JYbX9iVVaiou'});
 let currentThreadId = null; // Variable to store the current thread ID
 let assistantid = "asst_fREOmpcaYPqIx6MKmF15Chlo"; // Existing assistant ID
 
 let clients = [];
+
+app.get('/tools', async (req, res) => {
+    const response = await fetch('https://getaitools3-2ttopirmva-ew.a.run.app/', {
+            method: 'GET'})
+            const data = await response.json();
+            console.log("data:", data);
+            res.json(data);
+});
 
 app.get('/events', (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');

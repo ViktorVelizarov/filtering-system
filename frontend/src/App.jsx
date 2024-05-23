@@ -14,8 +14,8 @@ function PropertyCard({ property }) {
           <h2 className="font-bold text-lg">{property.Title}</h2>
           <p>€ {property.Price}</p>
           <div className="flex flex-row mt-3">
-            <p className="flex flex-row items-center mr-3"><BiSolidArea className="mr-2"/>{property.SurfaceArea} m</p>
-            <p className="flex flex-row items-center mr-3"><FaChartArea className="mr-2"/> {property.PlotSurfaceArea} m</p>
+            <p className="flex flex-row items-center mr-3"><BiSolidArea className="mr-2"/>{property.SurfaceArea} m²</p>
+            <p className="flex flex-row items-center mr-3"><FaChartArea className="mr-2"/> {property.PlotSurfaceArea} m²</p>
             <p className="flex flex-row items-center"><FaDoorOpen className="mr-2"/>{property.Rooms}</p>
           </div>
           <p className="flex flex-row items-center ml-2">{property.GeneralInfo}</p>
@@ -69,7 +69,7 @@ function App() {
       try {
         const response = await fetch('http://localhost:3000/createThread');
         const data = await response.json();
-        setMessages(data.messages);
+        setMessages(data.messages.reverse()); // Reverse messages once fetched
         setThreadCreated(true);
       } catch (error) {
         console.error('Error:', error);
@@ -81,6 +81,7 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setMessages(prevMessages => [...prevMessages, `user: ${inputFieldValue}`]);
     try {
       // Make a fetch request to the /addMessage endpoint with input field value as URL parameter
       const response = await fetch(`http://localhost:3000/addMessage?content=${encodeURIComponent(inputFieldValue)}`, {
@@ -90,12 +91,13 @@ function App() {
         }
       });
       const data = await response.json();
-      setMessages(data.messages);
+      setMessages(data.messages.reverse()); // Reverse messages once fetched
       setStreamedMessage(''); // Clear the streamed message
     } catch (error) {
       console.error('Error:', error);
     }
     setLoading(false);
+    setInputFieldValue('');
   };
 
   // Filter houses based on search query, price range, plot area range, surface area range, and rooms range
@@ -120,16 +122,16 @@ function App() {
         <div className="fixed bottom-20 right-8 bg-white p-4 rounded-md shadow-md z-20 w-96">
           {/* Display messages */}
           <div className="max-h-80 overflow-y-auto">
-            {messages.slice(0).reverse().map((message, index) => (
-              <div key={index} className={`message ${message.startsWith('user') ? 'bg-blue-500 text-white rounded-br-3xl rounded-tl-3xl ml-auto m-2' : 'bg-gray-300 text-black rounded-bl-3xl rounded-tr-3xl mr-auto'}`}>
-                <p className="p-2">{message}</p>
-              </div>
-            ))}
             {loading && (
               <div className="message bg-gray-300 text-black rounded-bl-3xl rounded-tr-3xl mr-auto">
                 <p className="p-2">{streamedMessage}</p>
               </div>
             )}
+            {messages.map((message, index) => (
+              <div key={index} className={`message ${message.startsWith('user') ? 'bg-blue-500 text-white rounded-br-3xl rounded-tl-3xl ml-auto m-2' : 'bg-gray-300 text-black rounded-bl-3xl rounded-tr-3xl mr-auto'}`}>
+                <p className="p-2">{message}</p>
+              </div>
+            ))}
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -171,7 +173,7 @@ function App() {
           />
         </div>
         {/* Plot area filters */}
-        <p className="font-medium"> Plot Area</p>
+        <p className="font-medium"> Plot area</p>
         <div className="my-4 flex flex-row items-center">
           <input 
             type="number" 
@@ -179,76 +181,76 @@ function App() {
             value={fromPlotArea}
             onChange={(e) => setFromPlotArea(e.target.value)}
             className="px-2 py-1 border border-gray-400 w-1/3 mr-2"
-          />
-          <p className="ml-2 mr-4"> to </p>
-          <input 
-            type="number" 
-            placeholder="" 
-            value={toPlotArea}
-            onChange={(e) => setToPlotArea(e.target.value)}
-            className="px-2 py-1 border border-gray-400 w-1/3"
-          />
+            />
+            <p className="ml-2 mr-4"> to </p>
+            <input 
+              type="number" 
+              placeholder="" 
+              value={toPlotArea}
+              onChange={(e) => setToPlotArea(e.target.value)}
+              className="px-2 py-1 border border-gray-400 w-1/3"
+            />
+          </div>
+          {/* Surface area filters */}
+          <p className="font-medium"> Surface area</p>
+          <div className="my-4 flex flex-row items-center">
+            <input 
+              type="number" 
+              placeholder="" 
+              value={fromSurfaceArea}
+              onChange={(e) => setFromSurfaceArea(e.target.value)}
+              className="px-2 py-1 border border-gray-400 w-1/3 mr-2"
+            />
+            <p className="ml-2 mr-4"> to </p>
+            <input 
+              type="number" 
+              placeholder="" 
+              value={toSurfaceArea}
+              onChange={(e) => setToSurfaceArea(e.target.value)}
+              className="px-2 py-1 border border-gray-400 w-1/3"
+            />
+          </div>
+          {/* Rooms filters */}
+          <p className="font-medium"> Rooms</p>
+          <div className="my-4 flex flex-row items-center">
+            <input 
+              type="number" 
+              placeholder="" 
+              value={fromRooms}
+              onChange={(e) => setFromRooms(e.target.value)}
+              className="px-2 py-1 border border-gray-400 w-1/3 mr-2"
+            />
+            <p className="ml-2 mr-4"> to </p>
+            <input 
+              type="number" 
+              placeholder=""   
+              value={toRooms}
+              onChange={(e) => setToRooms(e.target.value)}
+              className="px-2 py-1 border border-gray-400 w-1/3"
+            />
+          </div>
         </div>
-        {/* Surface area filters */}
-        <p className="font-medium"> Surface area</p>
-        <div className="my-4 flex flex-row items-center">
+  
+        {/* Search and Property Cards */}
+        <div className="md:col-span-3">
+          {/* Search bar */}
           <input 
-            type="number" 
-            placeholder="" 
-            value={fromSurfaceArea}
-            onChange={(e) => setFromSurfaceArea(e.target.value)}
-            className="px-2 py-1 border border-gray-400 w-1/3 mr-2"
+            type="text" 
+            placeholder="Search by address..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="my-4 px-2 py-1 border border-gray-400 w-full     rounded-md"
           />
-          <p className="ml-2 mr-4"> to </p>
-          <input 
-            type="number" 
-            placeholder="" 
-            value={toSurfaceArea}
-            onChange={(e) => setToSurfaceArea(e.target.value)}
-            className="px-2 py-1 border border-gray-400 w-1/3"
-          />
-        </div>
-        {/* Rooms filters */}
-        <p className="font-medium"> Rooms</p>
-        <div className="my-4 flex flex-row items-center">
-        <input 
-            type="number" 
-            placeholder="" 
-            value={fromRooms}
-            onChange={(e) => setFromRooms(e.target.value)}
-            className="px-2 py-1 border border-gray-400 w-1/3 mr-2"
-          />
-          <p className="ml-2 mr-4"> to </p>
-          <input 
-            type="number" 
-            placeholder="" 
-            value={toRooms}
-            onChange={(e) => setToRooms(e.target.value)}
-            className="px-2 py-1 border border-gray-400 w-1/3"
-          />
-
+          {/* Property Cards */}
+          <div className="grid grid-cols-1 gap-4">
+            {filteredHouses.map((house) => (
+              <PropertyCard key={house.PropertyID} property={house} />
+            ))}
+          </div>
         </div>
       </div>
-
-      {/* Search and Property Cards */}
-      <div className="md:col-span-3">
-        {/* Search bar */}
-        <input 
-          type="text" 
-          placeholder="Search by address..." 
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="my-4 px-2 py-1 border border-gray-400 w-full rounded-md"
-        />
-        {/* Property Cards */}
-        <div className="grid grid-cols-1 gap-4">
-          {filteredHouses.map((house) => (
-            <PropertyCard key={house.PropertyID} property={house} />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default App;
+    );
+  }
+  
+  export default App;
+  
