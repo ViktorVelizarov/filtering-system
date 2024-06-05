@@ -44,14 +44,15 @@ function App() {
   const [streamedMessage, setStreamedMessage] = useState('');
   const [loading, setLoading] = useState(false);
   
+  
   useEffect(() => {
-    fetch("http://localhost:3000/houses")
+    fetch("http://localhost:3001/houses")
       .then((res) => res.json())
       .then((data) => setHouses(data));
   }, []);
 
   useEffect(() => {
-    const eventSource = new EventSource("http://localhost:3000/events");
+    const eventSource = new EventSource("http://localhost:3001/events");
     eventSource.onmessage = (event) => {
       const newMessage = JSON.parse(event.data);
       // Append the new message to the existing streamedMessage
@@ -67,7 +68,8 @@ function App() {
     setShowPopup(!showPopup);
     if (!threadCreated) {
       try {
-        const response = await fetch('http://localhost:3000/createThread');
+        console.log("created thread")
+        const response = await fetch('http://localhost:3001/createThread');
         const data = await response.json();
         setMessages(data.messages.reverse()); // Reverse messages once fetched
         setThreadCreated(true);
@@ -84,7 +86,7 @@ function App() {
     setMessages(prevMessages => [...prevMessages, `user: ${inputFieldValue}`]);
     try {
       // Make a fetch request to the /addMessage endpoint with input field value as URL parameter
-      const response = await fetch(`http://localhost:3000/addMessage?content=${encodeURIComponent(inputFieldValue)}`, {
+      const response = await fetch(`http://localhost:3001/addMessage?content=${encodeURIComponent(inputFieldValue)}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
