@@ -7,6 +7,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      flex: {
+        '2/3': '2 2 66.666667%',
+        '1/3': '1 1 33.333333%',
+      },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-conic":
