@@ -16,7 +16,7 @@ const collectionName = 'properties';
 
 // Initialize OpenAI
 const { OpenAI } = require('openai');
-const openai = new OpenAI({ apiKey: 'sk-proj-MBmDcGpMZREfJsd34N29T3BlbkFJq6UE9VuEgSWPQeMemWx6'});
+const openai = new OpenAI({ apiKey: 'sk-proj-VSHL0j6pKUDbpl1kqFPQT3BlbkFJct4UNnhHKKjUlmI1TH7M'});
 let currentThreadId = null; // Variable to store the current thread ID
 let assistantid = "asst_fREOmpcaYPqIx6MKmF15Chlo"; // Existing assistant ID
 

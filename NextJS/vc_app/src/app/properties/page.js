@@ -74,7 +74,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const eventSource = new EventSource("http://localhost:3001/events");
+    const eventSource = new EventSource("/api/events");
 
     let tempMessage = "";
 
@@ -110,7 +110,7 @@ function App() {
     if (!threadCreated) {
       try {
         console.log("created thread")
-        const response = await fetch('http://localhost:3001/createThread');
+        const response = await fetch('/api/CreateThread');
         const data = await response.json();
         setMessages(data.messages.reverse());
         setThreadCreated(true);
@@ -125,13 +125,15 @@ function App() {
     setLoading(true);
     setMessages(prevMessages => [...prevMessages, `user: ${inputFieldValue}`]);
     try {
-      const response = await fetch(`http://localhost:3001/addMessage?content=${encodeURIComponent(inputFieldValue)}`, {
+      const response = await fetch(`/api/AddMessage?content=${encodeURIComponent(inputFieldValue)}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         }
       });
       const data = await response.json();
+      console.log("returned messages")
+      console.log(data)
       setMessages(data.messages.reverse());
       setStreamedMessage('');
     } catch (error) {

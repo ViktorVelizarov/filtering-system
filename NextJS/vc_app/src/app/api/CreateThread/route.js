@@ -1,35 +1,35 @@
-import { NextResponse } from 'next/server';
+// src/app/api/createThread/route.js
 import { OpenAI } from 'openai';
-import { setCurrentThreadId } from '../../lib/sharedState';
+import { NextResponse } from 'next/server';
+import { setCurrentThreadId } from '../threadStore';
+
+const openai = new OpenAI({ apiKey: 'sk-proj-VSHL0j6pKUDbpl1kqFPQT3BlbkFJct4UNnhHKKjUlmI1TH7M' });
+const assistantid = "asst_fREOmpcaYPqIx6MKmF15Chlo";
 
 export async function GET(request) {
-  const openai = new OpenAI({ apiKey: 'sk-proj-ETWPHEmXjPkinzydYpKNT3BlbkFJXyK6cwq3UjFoYWU7e5tH' });
-  const assistantId = "asst_fREOmpcaYPqIx6MKmF15Chlo";
-
   try {
-    // Create a new thread
+    console.log('Creating a new thread');
     const thread = await openai.beta.threads.create();
-    setCurrentThreadId(thread.id); // Update the current thread ID
+    setCurrentThreadId(thread.id);  // Update the current thread ID
+    console.log('Thread created:', thread);
 
-    // Run the assistant in the thread
+    console.log('Creating and polling a run');
     let run = await openai.beta.threads.runs.createAndPoll(thread.id, {
-      assistant_id: assistantId,
+      assistant_id: assistantid,
     });
+    console.log('Run status:', run.status);
 
     if (run.status === 'completed') {
-      // Retrieve messages in the thread
+      console.log('Run completed, fetching messages');
       const messages = await openai.beta.threads.messages.list(thread.id);
       const messageContents = messages.data.map(message => `${message.role} > ${message.content[0].text.value}`);
-      return NextResponse.json({ messages: messageContents });
+      return NextResponse.json({ messages: messageContents }, { status: 200 });
     } else {
-      return NextResponse.json({ error: "Assistant run failed" });
+      console.error('Assistant run failed');
+      return NextResponse.json({ error: "Assistant run failed" }, { status: 500 });
     }
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: err.message });
+    console.error('Error in GET /api/CreateThread:', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-
-
-
-
