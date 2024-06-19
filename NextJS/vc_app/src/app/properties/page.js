@@ -66,48 +66,32 @@ function App() {
   const propertiesPerPage = 9;
   const [pageWindow, setPageWindow] = useState([1, 5]);
 
+  console.log("recommendedProperties")
+console.log(recommendedProperties)
+  
   useEffect(() => {
     fetch("/api/GetHouses")
       .then((res) => res.json())
       .then((data) => setHouses(data));
   }, []);
 
+ 
   useEffect(() => {
-    const eventSource = new EventSource("/api/streamMessages");
-    let tempMessage = "";
-
-    eventSource.onmessage = (event) => {
-      const newMessage = JSON.parse(event.data).content;
-      console.log('Received message:', message);
-      tempMessage += newMessage;
-      console.log(tempMessage)
-
-      const propertyTitlesRegex = /Property Title: (.*?)(?:,|$)/g;
-      let match;
-      const matchedTitles = [];
-
-      while ((match = propertyTitlesRegex.exec(tempMessage)) !== null) {
-        matchedTitles.push(match[1].trim());
+    const propertyTitlesRegex = /Property Title: (.*?)(?:,|$)/g;
+    let matchedTitles = [];
+  
+    messages.forEach(message => {
+      const matches = message.matchAll(propertyTitlesRegex);
+      for (const match of matches) {
+        const title = match[1].trim();
+        if (!matchedTitles.includes(title)) {
+          matchedTitles.push(title);
+        }
       }
-
-      if (matchedTitles.length > 0) {
-        setRecommendedProperties(matchedTitles);
-        console.log('Recommended Properties:', matchedTitles);
-      }
-
-      setStreamedMessage(tempMessage);
-    };
-
-    eventSource.onerror = (error) => {
-      console.error('EventSource error:', error);
-      eventSource.close();
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, []);
-
+    });
+  
+    setRecommendedProperties(matchedTitles);
+  }, [messages]);
   
 
   const toggleSection = () => {
@@ -118,6 +102,7 @@ function App() {
     setShowFilters(false); // Hide filters when chat is opened
     if(!threadCreated){
       createChatThread();
+      setLoading(true);
     }
     
   };
@@ -129,6 +114,7 @@ function App() {
       const data = await response.json();
       setMessages(data.messages.reverse());
       setThreadCreated(true);
+      setLoading(false);
     } catch (error) {
       console.error('Error creating thread:', error);
     }
