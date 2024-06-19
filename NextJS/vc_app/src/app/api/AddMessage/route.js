@@ -1,15 +1,14 @@
-// src/app/api/addMessage/route.js
 import { OpenAI } from 'openai';
 import { NextResponse } from 'next/server';
+import { broadcastMessage } from '../streamMessages/route';
 import { getCurrentThreadId } from '../threadStore';
 
-const openai = new OpenAI({ apiKey: 'sk-proj-VSHL0j6pKUDbpl1kqFPQT3BlbkFJct4UNnhHKKjUlmI1TH7M' });
+const openai = new OpenAI({ apiKey: 'sk-proj-gIANrbiuCx0AzhI3HBmHT3BlbkFJxlBI6B97G15gP1GEyQ3Y' });
 const assistantid = "asst_fREOmpcaYPqIx6MKmF15Chlo";
-let clients = [];
 
 export async function POST(request) {
   try {
-    const currentThreadId = getCurrentThreadId();  // Get the current thread ID
+    const currentThreadId = getCurrentThreadId();  // Assuming you have this defined
     if (!currentThreadId) {
       return NextResponse.json({ error: "No thread created yet" }, { status: 400 });
     }
@@ -33,6 +32,7 @@ export async function POST(request) {
       assistant_id: assistantid
     });
 
+    // Handle different events from OpenAI stream
     run.on('textCreated', (text) => {
       const message = { role: 'assistant', content: text };
       broadcastMessage(message);
@@ -62,6 +62,7 @@ export async function POST(request) {
       }
     });
 
+    // Return a promise that resolves when the OpenAI run ends
     return new Promise((resolve, reject) => {
       run.on('end', async () => {
         try {
@@ -83,27 +84,4 @@ export async function POST(request) {
     console.error(err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
-}
-
-function broadcastMessage(message) {
-  clients.forEach(client => {
-    client.write(`data: ${JSON.stringify(message)}\n\n`);
-  });
-}
-
-// Handle SSE connections
-export const config = {
-  api: {
-    bodyParser: true,
-  },
-};
-
-export function onClientConnect(client) {
-  console.log('Client connected to SSE');
-  clients.push(client);
-
-  client.on('close', () => {
-    clients = clients.filter(c => c !== client);
-    console.log('Client disconnected from SSE');
-  });
 }

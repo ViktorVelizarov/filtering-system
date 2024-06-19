@@ -3,7 +3,7 @@ import { OpenAI } from 'openai';
 import { NextResponse } from 'next/server';
 import { setCurrentThreadId } from '../threadStore';
 
-const openai = new OpenAI({ apiKey: 'sk-proj-VSHL0j6pKUDbpl1kqFPQT3BlbkFJct4UNnhHKKjUlmI1TH7M' });
+const openai = new OpenAI({ apiKey: 'sk-proj-gIANrbiuCx0AzhI3HBmHT3BlbkFJxlBI6B97G15gP1GEyQ3Y' });
 const assistantid = "asst_fREOmpcaYPqIx6MKmF15Chlo";
 
 export async function GET(request) {
